@@ -313,7 +313,7 @@ function commandAtCaret() {
   const node = selection.anchorNode;
   if (node?.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return null;
   const offset = selection.anchorOffset;
-  const pattern = /(?:^|[\s=+*/(,-])(i\(([1-4])\)|mat([1-4])x([1-4]))$/i;
+  const pattern = /(?:^|[\s=+*/(,-])(i\(([1-4])\)|mat([1-4])(?:x([1-4]))?)$/i;
   let end = offset;
   let match = node.textContent.slice(0, end).match(pattern);
   if (!match && node.textContent[offset] === ')') {
@@ -323,7 +323,7 @@ function commandAtCaret() {
   if (!match) return null;
   return { node, start: end - match[1].length, end,
     rows: match[2] ? Number(match[2]) : Number(match[3]),
-    cols: match[2] ? Number(match[2]) : Number(match[4]), identity: Boolean(match[2]) };
+    cols: match[2] ? Number(match[2]) : Number(match[4] || match[3]), identity: Boolean(match[2]) };
 }
 function expandCommand(command) {
   const range = document.createRange();
