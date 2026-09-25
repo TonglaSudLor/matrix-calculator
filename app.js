@@ -307,25 +307,6 @@ function expandCommand(command) {
   matrix.querySelector('input').focus();
   message.textContent = '';
 }
-function insertTemplate(template) {
-  editor.focus();
-  const selection = window.getSelection();
-  const range = selection.rangeCount && editor.contains(selection.anchorNode) ? selection.getRangeAt(0) : document.createRange();
-  if (!selection.rangeCount || !editor.contains(selection.anchorNode)) { range.selectNodeContents(editor); range.collapse(false); }
-  if (template.startsWith('i(') || template.startsWith('mat')) {
-    const identity = template.startsWith('i(');
-    const dims = identity ? [Number(template.match(/\d+/)[0]), Number(template.match(/\d+/)[0])] : template.match(/\d+/g).map(Number);
-    const matrix = matrixElement(dims[0], dims[1], identity);
-    range.deleteContents(); range.insertNode(matrix);
-    matrix.querySelector('input').focus();
-  } else {
-    const node = document.createTextNode(template);
-    range.deleteContents(); range.insertNode(node);
-    const caret = document.createRange();
-    caret.setStart(node, Math.max(0, template.length - 1)); caret.collapse(true);
-    selection.removeAllRanges(); selection.addRange(caret);
-  }
-}
 function serializeEditor() {
   function read(node) {
     if (node.nodeType === Node.TEXT_NODE) return sourceSymbols(node.textContent);
@@ -344,11 +325,12 @@ function serializeEditor() {
   }
   return [...editor.childNodes].map(read).join('').trim();
 }
+let calculating = false;
 async function calculate() {
+  if (calculating) return null;
+  calculating = true;
   message.textContent = '';
   document.querySelector('#variable-message').textContent = '';
-  const button = document.querySelector('#calculate');
-  button.disabled = true;
   try {
     normalizeExpressionDisplay();
     const formula = serializeEditor();
@@ -383,7 +365,7 @@ async function calculate() {
     if (!document.querySelector('#variable-panel').hidden) document.querySelector('#variable-message').textContent = error.message;
     return null;
   }
-  finally { button.disabled = false; }
+  finally { calculating = false; }
 }
 
 editor.addEventListener('keydown', event => {
@@ -426,12 +408,29 @@ editor.addEventListener('paste', event => {
   range.setStartAfter(node); range.collapse(true);
   selection.removeAllRanges(); selection.addRange(range);
 });
-document.querySelector('#calculate').addEventListener('click', calculate);
-document.querySelectorAll('[data-template]').forEach(button => button.addEventListener('click', () => insertTemplate(button.dataset.template)));
 document.querySelector('#copy-input').addEventListener('click', () => {
   if (lastResult) navigator.clipboard.writeText(lastResult.kind === 'matrix' ? `[${lastResult.cells.map(row => `[${row.join(', ')}]`).join(', ')}]` : lastResult.text);
 });
 document.querySelector('#copy-latex').addEventListener('click', () => { if (lastResult) navigator.clipboard.writeText(lastResult.latex); });
+function closeManual() {
+  document.querySelector('#manual-panel').hidden = true;
+  document.querySelector('#manual-toggle').setAttribute('aria-expanded', 'false');
+  document.querySelector('#manual-toggle').focus();
+}
+document.querySelector('#manual-toggle').addEventListener('click', () => {
+  const panel = document.querySelector('#manual-panel');
+  if (!panel.hidden) { closeManual(); return; }
+  panel.hidden = false;
+  document.querySelector('#manual-toggle').setAttribute('aria-expanded', 'true');
+  document.querySelector('#manual-close').focus();
+});
+document.querySelector('#manual-close').addEventListener('click', closeManual);
+document.querySelector('#manual-panel').addEventListener('click', event => {
+  if (event.target === event.currentTarget) closeManual();
+});
+document.querySelector('#manual-panel').addEventListener('keydown', event => {
+  if (event.key === 'Escape') { event.preventDefault(); closeManual(); }
+});
 document.querySelector('#substitute-toggle').addEventListener('click', () => {
   substituteValues = !substituteValues;
   updateSubstitutionControl();
