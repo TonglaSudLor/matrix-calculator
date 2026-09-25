@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matrix Lab</title>
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="workspace">
+    <header class="toolbar"><span class="brand">Matrix Lab</span><div class="toolbar-actions"><button id="variables-toggle" type="button" aria-expanded="false" aria-controls="variable-panel">กำหนดค่าตัวแปร</button><div class="settings-wrap"><button id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">⚙ ตั้งค่า <span id="angle-indicator">DEG</span></button><div id="settings-panel" class="settings-panel" hidden><div class="eyebrow">หน่วยมุม</div><div class="angle-options"><button type="button" data-angle="DEG">DEG · องศา</button><button type="button" data-angle="RAD">RAD · เรเดียน</button></div><p>ใช้กับ sin, cos, tan เมื่อมุมเป็นตัวเลข</p></div></div><button id="theme" type="button" title="สลับธีม">◐</button></div></header>
+    <section class="answer" aria-label="คำตอบ"><div class="answer-heading"><div class="eyebrow">ANSWER</div><button id="substitute-toggle" type="button" aria-pressed="true">แทนค่า: เปิด</button></div><div id="result-math" class="result-math"><span class="muted">คำตอบจะแสดงที่นี่</span></div><div id="conditions" class="conditions" hidden></div><div id="message" class="message" role="status"></div><div id="result-actions" class="result-actions" hidden><button id="steps-toggle" type="button" aria-expanded="false" aria-controls="steps-panel">แสดงวิธีทำ</button><button id="copy-input" type="button">คัดลอกสูตร</button><button id="copy-latex" type="button">คัดลอก LaTeX</button></div><div id="steps-panel" class="steps-panel" hidden></div></section>
+    <section id="variable-panel" class="variable-panel" role="dialog" aria-modal="true" aria-label="กำหนดค่าตัวแปร" hidden><div class="variable-dialog"><div class="variable-heading"><div><div class="eyebrow">VARIABLE VALUES</div><p>เพิ่มตัวแปรไว้ก่อน หรือกรอกค่าของตัวแปรในสูตร ช่องว่างคงเป็นตัวแปร</p></div><button id="variables-close" type="button" aria-label="ปิด">×</button></div><div class="variable-table-wrap"><table class="variable-table"><thead><tr><th scope="col">ตัวแปร</th><th scope="col">ค่า</th></tr></thead><tbody id="variable-fields"></tbody></table></div><div class="variable-add"><input id="variable-name" type="text" placeholder="ชื่อ เช่น theta1 หรือ l1" aria-label="ชื่อตัวแปรใหม่"><button id="variable-add" type="button">เพิ่มตัวแปร</button></div><div id="variable-message" class="variable-message" role="alert"></div><div class="variable-actions"><button id="variables-clear" type="button">ล้างค่าทั้งหมด</button><button id="variables-apply" type="button">คำนวณด้วยค่านี้</button></div></div></section>
+    <section class="work" aria-label="พื้นที่พิมพ์สูตร"><div class="eyebrow">EXPRESSION</div><div id="editor" class="editor" contenteditable="true" role="textbox" aria-label="พิมพ์สูตรเมทริกซ์" aria-multiline="false" spellcheck="false" data-placeholder="พิมพ์ i(3) หรือ mat2x3 แล้วกด Space หรือ Enter"></div><div class="work-footer"><span><kbd>Space / Enter</kbd> แปลงคำสั่งเป็นเมทริกซ์ · <kbd>Enter</kbd> คำนวณสูตร · <kbd>Ctrl Enter</kbd> คำนวณจากช่องเมทริกซ์</span><button id="calculate" type="button">คำนวณ <span>↵</span></button></div></section>
+    <div class="quick"><button type="button" data-template="i(3)">Identity 3×3</button><button type="button" data-template="mat2x2">Matrix 2×2</button><button type="button" data-template="mat2x3">Matrix 2×3</button><button type="button" data-template="mat3x3">Matrix 3×3</button><button type="button" data-template="det()">det</button><button type="button" data-template="transpose()">transpose</button><button type="button" data-template="inverse()">inverse</button></div>
+    <p class="hint">พิมพ์ต่อหลังเมทริกซ์ได้ เช่น <code>i(3) * mat3x3</code> · ช่องเมทริกซ์กด Enter เพื่อไปช่องขวา</p>
+  </main>
+  <script src="/vendor/katex/katex.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

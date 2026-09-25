@@ -1,0 +1,9 @@
+{
+  "name": "symbolic-matrix-calculator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python local_server.py",
+    "test": "python -m unittest -v test_calculator"
+  }
+}
