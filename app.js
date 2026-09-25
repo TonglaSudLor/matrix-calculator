@@ -107,6 +107,7 @@ function renderVariableFields(symbols) {
     input.value = symbolValues[symbol] || '';
     input.dataset.symbol = symbol;
     input.addEventListener('keydown', event => {
+      if (handleInputParentheses(event, input)) return;
       if (event.key === 'Enter') { event.preventDefault(); document.querySelector('#variables-apply').click(); }
     });
     input.setAttribute('aria-label', `ค่า ${displaySymbols(symbol)}`);
@@ -157,6 +158,78 @@ function prettifyField(field) {
   const value = showPowers(displaySymbols(field.value));
   if (value !== field.value) { field.value = value; field.setSelectionRange(before.length, before.length); }
 }
+function handleInputParentheses(event, input) {
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  if (event.key === '(') {
+    event.preventDefault();
+    event.stopPropagation();
+    const selected = input.value.slice(start, end);
+    input.setRangeText(`(${selected})`, start, end, 'end');
+    input.setSelectionRange(start + 1 + selected.length, start + 1 + selected.length);
+    return true;
+  }
+  if (event.key === ')' && start === end && input.value[start] === ')') {
+    event.preventDefault();
+    event.stopPropagation();
+    input.setSelectionRange(start + 1, start + 1);
+    return true;
+  }
+  if (event.key === 'Backspace' && start === end && input.value[start - 1] === '(' && input.value[start] === ')') {
+    event.preventDefault();
+    event.stopPropagation();
+    input.setRangeText('', start - 1, start + 1, 'start');
+    return true;
+  }
+  return false;
+}
+function handleEditorParentheses(event) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount || !editor.contains(selection.anchorNode)) return false;
+  const range = selection.getRangeAt(0);
+  const node = selection.anchorNode;
+  const offset = selection.anchorOffset;
+  if (event.key === '(') {
+    event.preventDefault();
+    const selected = range.toString();
+    const wrapped = `(${selected})`;
+    let target;
+    let position;
+    if (node.nodeType === Node.TEXT_NODE && range.startContainer === node && range.endContainer === node) {
+      const start = range.startOffset;
+      const end = range.endOffset;
+      node.textContent = node.textContent.slice(0, start) + wrapped + node.textContent.slice(end);
+      target = node;
+      position = start + 1 + selected.length;
+    } else {
+      range.deleteContents();
+      target = document.createTextNode(wrapped);
+      range.insertNode(target);
+      position = 1 + selected.length;
+    }
+    const caret = document.createRange();
+    caret.setStart(target, position); caret.collapse(true);
+    selection.removeAllRanges(); selection.addRange(caret);
+    return true;
+  }
+  if (node.nodeType !== Node.TEXT_NODE || !selection.isCollapsed) return false;
+  if (event.key === ')' && node.textContent[offset] === ')') {
+    event.preventDefault();
+    const caret = document.createRange();
+    caret.setStart(node, offset + 1); caret.collapse(true);
+    selection.removeAllRanges(); selection.addRange(caret);
+    return true;
+  }
+  if (event.key === 'Backspace' && node.textContent[offset - 1] === '(' && node.textContent[offset] === ')') {
+    event.preventDefault();
+    node.textContent = node.textContent.slice(0, offset - 1) + node.textContent.slice(offset + 1);
+    const caret = document.createRange();
+    caret.setStart(node, offset - 1); caret.collapse(true);
+    selection.removeAllRanges(); selection.addRange(caret);
+    return true;
+  }
+  return false;
+}
 function matrixElement(rows, cols, identity) {
   const matrix = document.createElement('span');
   matrix.className = 'inline-matrix';
@@ -177,6 +250,7 @@ function matrixElement(rows, cols, identity) {
     input.setAttribute('aria-label', `แถว ${row + 1} คอลัมน์ ${col + 1}`);
     input.addEventListener('input', () => prettifyField(input));
     input.addEventListener('keydown', event => {
+      if (handleInputParentheses(event, input)) return;
       if (event.key === 'Enter' || event.key === 'Tab') {
         if (event.ctrlKey && event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); calculate(); return; }
         event.preventDefault();
@@ -305,6 +379,8 @@ async function calculate() {
 }
 
 editor.addEventListener('keydown', event => {
+  if (event.target !== editor) return;
+  if (handleEditorParentheses(event)) return;
   if (event.key === ' ' || event.key === 'Enter') {
     const command = commandAtCaret();
     if (command) { event.preventDefault(); expandCommand(command); return; }
