@@ -218,6 +218,8 @@ function handleEditorParentheses(event) {
     const caret = document.createRange();
     caret.setStart(node, offset + 1); caret.collapse(true);
     selection.removeAllRanges(); selection.addRange(caret);
+    const command = commandAtCaret();
+    if (command) expandCommand(command);
     return true;
   }
   if (event.key === 'Backspace' && node.textContent[offset - 1] === '(' && node.textContent[offset] === ')') {
@@ -284,10 +286,16 @@ function commandAtCaret() {
   if (!selection.rangeCount || !selection.isCollapsed) return null;
   const node = selection.anchorNode;
   if (node?.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return null;
-  const before = node.textContent.slice(0, selection.anchorOffset);
-  const match = before.match(/(?:^|[\s=+*/(,-])(i\(([1-4])\)|mat([1-4])x([1-4]))$/i);
+  const offset = selection.anchorOffset;
+  const pattern = /(?:^|[\s=+*/(,-])(i\(([1-4])\)|mat([1-4])x([1-4]))$/i;
+  let end = offset;
+  let match = node.textContent.slice(0, end).match(pattern);
+  if (!match && node.textContent[offset] === ')') {
+    end = offset + 1;
+    match = node.textContent.slice(0, end).match(pattern);
+  }
   if (!match) return null;
-  return { node, start: selection.anchorOffset - match[1].length, end: selection.anchorOffset,
+  return { node, start: end - match[1].length, end,
     rows: match[2] ? Number(match[2]) : Number(match[3]),
     cols: match[2] ? Number(match[2]) : Number(match[4]), identity: Boolean(match[2]) };
 }
@@ -401,6 +409,10 @@ editor.addEventListener('input', () => {
     node.textContent = value;
     const range = document.createRange(); range.setStart(node, before.length); range.collapse(true);
     selection.removeAllRanges(); selection.addRange(range);
+  }
+  if (node.textContent[selection.anchorOffset - 1] === ')') {
+    const command = commandAtCaret();
+    if (command) expandCommand(command);
   }
 });
 editor.addEventListener('paste', event => {
