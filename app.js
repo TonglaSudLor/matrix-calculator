@@ -84,7 +84,7 @@ function showAnswer(result) {
   document.querySelector('#result-actions').hidden = false;
   document.querySelectorAll('[data-format]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.format === formatMode));
-    button.disabled = button.dataset.format === 'sqrt' && result.kind === 'matrix';
+    button.disabled = false;
   });
 }
 function renderVariableFields(symbols) {
@@ -449,7 +449,7 @@ document.querySelectorAll('[data-format]').forEach(button => button.addEventList
   finally {
     formatting = false;
     document.querySelectorAll('[data-format]').forEach(item => {
-      item.disabled = item.dataset.format === 'sqrt' && baseResult.kind === 'matrix';
+      item.disabled = false;
     });
   }
 }));
