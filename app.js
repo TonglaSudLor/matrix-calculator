@@ -81,7 +81,6 @@ function showAnswer(result) {
       conditions.append(span, '  ');
     }
   }
-  document.querySelector('#format-actions').hidden = false;
   document.querySelector('#result-actions').hidden = false;
   document.querySelectorAll('[data-format]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.format === formatMode));
