@@ -16,6 +16,9 @@ function sourcePowers(text) {
     token => '^' + [...token].map(char => char === '⁻' ? '-' : char === '⁺' ? '+' : String(supers.indexOf(char))).join(''));
 }
 let lastResult = null;
+let baseResult = null;
+let formatMode = 'original';
+let formatting = false;
 let variables = {};
 function loadStored(key, fallback) {
   try { return JSON.parse(sessionStorage.getItem(key)) ?? fallback; }
@@ -60,6 +63,30 @@ function renderSteps(steps) {
     list.append(item);
   }
   panel.append(list);
+}
+function showAnswer(result) {
+  lastResult = result;
+  variables.ans = result;
+  renderSteps(result.steps);
+  document.querySelector('#steps-panel').hidden = true;
+  document.querySelector('#steps-toggle').setAttribute('aria-expanded', 'false');
+  window.katex.render(result.latex, resultMath, { throwOnError: false, displayMode: true, strict: 'ignore' });
+  conditions.replaceChildren();
+  conditions.hidden = !result.conditions?.length;
+  if (result.conditions?.length) {
+    conditions.append('เงื่อนไข: ');
+    for (const item of result.conditions) {
+      const span = document.createElement('span');
+      window.katex.render(item.latex, span, { throwOnError: false });
+      conditions.append(span, '  ');
+    }
+  }
+  document.querySelector('#format-actions').hidden = false;
+  document.querySelector('#result-actions').hidden = false;
+  document.querySelectorAll('[data-format]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.format === formatMode));
+    button.disabled = button.dataset.format === 'sqrt' && result.kind === 'matrix';
+  });
 }
 function renderVariableFields(symbols) {
   if (symbols) {
@@ -338,27 +365,13 @@ async function calculate() {
     const response = await fetch('/api/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formula, variables, angleUnit, symbolValues: substituteValues ? symbolValues : {} }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'คำนวณไม่ได้');
-    lastResult = result;
+    baseResult = result;
+    formatMode = 'original';
     result.symbols?.forEach(symbol => knownSymbols.add(symbol));
     saveSymbols();
     if (!document.querySelector('#variable-panel').hidden) renderVariableFields(result.symbols);
-    renderSteps(result.steps);
-    document.querySelector('#steps-panel').hidden = true;
-    document.querySelector('#steps-toggle').setAttribute('aria-expanded', 'false');
-    window.katex.render(result.latex, resultMath, { throwOnError: false, displayMode: true, strict: 'ignore' });
-    conditions.replaceChildren();
-    conditions.hidden = !result.conditions?.length;
-    if (result.conditions?.length) {
-      conditions.append('เงื่อนไข: ');
-      for (const item of result.conditions) {
-        const span = document.createElement('span');
-        window.katex.render(item.latex, span, { throwOnError: false });
-        conditions.append(span, '  ');
-      }
-    }
-    variables.ans = result;
+    showAnswer(result);
     if (result.assignment) variables[result.assignment] = { ...result.symbolic, conditions: result.conditions };
-    document.querySelector('#result-actions').hidden = false;
     return result;
   } catch (error) {
     message.textContent = error.message;
@@ -412,6 +425,35 @@ document.querySelector('#copy-input').addEventListener('click', () => {
   if (lastResult) navigator.clipboard.writeText(lastResult.kind === 'matrix' ? `[${lastResult.cells.map(row => `[${row.join(', ')}]`).join(', ')}]` : lastResult.text);
 });
 document.querySelector('#copy-latex').addEventListener('click', () => { if (lastResult) navigator.clipboard.writeText(lastResult.latex); });
+document.querySelectorAll('[data-format]').forEach(button => button.addEventListener('click', async () => {
+  if (!baseResult || calculating || formatting) return;
+  const operation = button.dataset.format;
+  message.textContent = '';
+  if (operation === 'original') {
+    formatMode = 'original';
+    showAnswer(baseResult);
+    return;
+  }
+  formatting = true;
+  document.querySelectorAll('[data-format]').forEach(item => { item.disabled = true; });
+  try {
+    const response = await fetch('/api/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ formula: `${operation}(ans)`, variables: { ...variables, ans: baseResult }, angleUnit, symbolValues: {} }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'จัดรูปคำตอบไม่ได้');
+    formatMode = operation;
+    showAnswer(result);
+  } catch (error) { message.textContent = error.message; }
+  finally {
+    formatting = false;
+    document.querySelectorAll('[data-format]').forEach(item => {
+      item.disabled = item.dataset.format === 'sqrt' && baseResult.kind === 'matrix';
+    });
+  }
+}));
 function closeManual() {
   document.querySelector('#manual-panel').hidden = true;
   document.querySelector('#manual-toggle').setAttribute('aria-expanded', 'false');
