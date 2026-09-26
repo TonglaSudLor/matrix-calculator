@@ -144,12 +144,12 @@ function renderVariableFields(symbols) {
 }
 
 function displaySymbols(text) {
-  return text.replace(/\b(theta|alpha|beta|gamma|delta|lambda|phi|pi)(?:_?(\d+))?\b/g, (_, name, digits = '') => greek[name] + [...digits].map(d => subs[Number(d)]).join(''))
+  return text.replace(/\*/g, '×').replace(/\b(theta|alpha|beta|gamma|delta|lambda|phi|pi)(?:_?(\d+))?\b/g, (_, name, digits = '') => greek[name] + [...digits].map(d => subs[Number(d)]).join(''))
     .replace(/([θαβγδλφπ])_?(\d+)/g, (_, symbol, digits) => symbol + [...digits].map(d => subs[Number(d)]).join(''))
     .replace(/\b([a-z])_?(\d+)\b/g, (_, letter, digits) => letter + [...digits].map(d => subs[Number(d)]).join(''));
 }
 function sourceSymbols(text) {
-  return sourcePowers(text.replace(/[θαβγδλφπ][₀-₉]*/g, token => backGreek[token[0]] + [...token.slice(1)].map(d => String(subs.indexOf(d))).join(''))
+  return sourcePowers(text.replace(/×/g, '*').replace(/[θαβγδλφπ][₀-₉]*/g, token => backGreek[token[0]] + [...token.slice(1)].map(d => String(subs.indexOf(d))).join(''))
     .replace(/([a-z])([₀-₉]+)/g, (_, letter, digits) => letter + [...digits].map(d => String(subs.indexOf(d))).join('')));
 }
 function expandTrigText(text) {
@@ -313,7 +313,7 @@ function commandAtCaret() {
   const node = selection.anchorNode;
   if (node?.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return null;
   const offset = selection.anchorOffset;
-  const pattern = /(?:^|[\s=+*/(,-])(i\(([1-4])\)|mat([1-4])(?:x([1-4]))?)$/i;
+  const pattern = /(?:^|[\s=+*×/(,-])(i\(([1-4])\)|mat([1-4])(?:x([1-4]))?)$/i;
   let end = offset;
   let match = node.textContent.slice(0, end).match(pattern);
   if (!match && node.textContent[offset] === ')') {
